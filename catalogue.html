@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catalogue — Italian's Got Vin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:   #0e0d0b;
+  --gold:  #C9A84C;
+  --gold2: #E8D5A0;
+  --red:   #C8151B;
+  --cream: #F7F3EC;
+  --warm:  #EDE7DA;
+  --mid:   #8C7B66;
+  --light: #FAF8F4;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--ink); }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px; height: 64px;
+  background: rgba(14,13,11,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+}
+.nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gold); text-decoration: none; }
+.nav-logo span { font-style: italic; color: #fff; }
+.nav-back { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: #aaa; text-decoration: none; transition: color 0.2s; }
+.nav-back:hover { color: var(--gold); }
+#cart-btn {
+  background: var(--red); color: #fff; border: none;
+  padding: 9px 20px; font-size: 0.75rem; letter-spacing: 0.1em;
+  text-transform: uppercase; cursor: pointer; font-family: 'Inter', sans-serif;
+}
+
+.catalogue-header {
+  background: var(--ink); padding: 48px 48px 40px;
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+}
+.catalogue-header h1 {
+  font-family: 'Cormorant Garamond', serif; font-size: 2.2rem;
+  font-weight: 300; color: #fff;
+}
+.catalogue-header h1 em { font-style: italic; color: var(--gold); }
+.catalogue-header p { font-size: 0.82rem; color: #777; margin-top: 6px; }
+
+#filters {
+  background: #fff; padding: 16px 48px;
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  border-bottom: 1px solid #e8e2d8; position: sticky; top: 64px; z-index: 50;
+}
+#filters label { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); font-weight: 500; }
+#filters select, #filters input {
+  padding: 8px 14px; border: 1px solid #ddd; font-size: 0.85rem;
+  background: var(--light); color: var(--ink); font-family: 'Inter', sans-serif;
+  outline: none;
+}
+#filters select:focus, #filters input:focus { border-color: var(--red); }
+#result-count { margin-left: auto; font-size: 0.75rem; color: var(--mid); }
+
+#wine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1px; padding: 0; background: #e8e2d8;
+}
+.wine-card {
+  background: var(--light); display: flex; flex-direction: column;
+  transition: background 0.15s;
+}
+.wine-card:hover { background: #fff; }
+.wine-card img {
+  width: 100%; height: 220px; object-fit: contain;
+  background: var(--cream); padding: 16px; cursor: pointer;
+}
+.wine-img-placeholder {
+  width: 100%; height: 220px; background: var(--cream);
+  display: flex; align-items: center; justify-content: center; font-size: 3rem;
+}
+.card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; border-top: 1px solid #e8e2d8; }
+.card-producer { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--red); font-weight: 500; }
+.card-name { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 400; margin: 6px 0 4px; line-height: 1.3; flex: 1; color: var(--ink); }
+.card-type { font-size: 0.7rem; color: var(--mid); margin-bottom: 12px; }
+.card-price { font-size: 1.05rem; font-weight: 500; color: var(--ink); margin-bottom: 12px; }
+.add-btn {
+  background: var(--ink); color: #fff; border: none; padding: 9px;
+  font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; width: 100%; font-family: 'Inter', sans-serif; transition: background 0.2s;
+}
+.add-btn:hover { background: var(--red); }
+
+#no-results { text-align: center; padding: 80px; color: var(--mid); font-size: 1rem; display: none; }
+
+/* CART */
+#cart-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; }
+#cart-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 400px;
+  background: var(--ink); border-left: 1px solid rgba(201,168,76,0.2);
+  display: flex; flex-direction: column; z-index: 201;
+  transform: translateX(100%); transition: transform 0.3s;
+}
+#cart-panel.open { transform: translateX(0); }
+#cart-header { padding: 20px 24px; border-bottom: 1px solid rgba(201,168,76,0.15); display: flex; justify-content: space-between; align-items: center; }
+#cart-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gold); }
+#cart-close { background: none; border: none; color: #aaa; font-size: 1.4rem; cursor: pointer; }
+#cart-items { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.cart-item { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.cart-item-name { flex: 1; font-size: 0.82rem; color: #ddd; line-height: 1.4; }
+.cart-item-price { font-size: 0.82rem; color: var(--gold); white-space: nowrap; }
+.qty-controls { display: flex; align-items: center; gap: 8px; }
+.qty-btn { background: #222; border: 1px solid #333; color: #fff; width: 26px; height: 26px; cursor: pointer; }
+.qty-btn:hover { background: var(--red); border-color: var(--red); }
+#cart-footer { padding: 20px 24px; border-top: 1px solid rgba(201,168,76,0.15); }
+#cart-total { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: #fff; margin-bottom: 16px; }
+#order-name, #order-phone {
+  width: 100%; padding: 10px 14px; background: #1a1916; border: 1px solid #333;
+  color: #fff; font-family: 'Inter', sans-serif; font-size: 0.85rem; margin-bottom: 10px;
+}
+#send-wa {
+  background: #25D366; color: #fff; border: none; padding: 13px;
+  width: 100%; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+}
+#send-wa:hover { background: #1da851; }
+
+/* LIGHTBOX */
+#lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 300; align-items: center; justify-content: center; }
+#lightbox.open { display: flex; }
+#lightbox img { max-width: 90vw; max-height: 85vh; object-fit: contain; }
+#lightbox-close { position: absolute; top: 20px; right: 28px; color: #fff; font-size: 2rem; cursor: pointer; background: none; border: none; }
+
+@media (max-width: 768px) {
+  nav { padding: 0 20px; }
+  .catalogue-header { padding: 32px 20px 28px; }
+  #filters { padding: 12px 20px; top: 64px; }
+  #cart-panel { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">Italian's <span>Got Vin</span></a>
+  <a class="nav-back" href="index.html">← Accueil</a>
+  <button id="cart-btn" onclick="openCart()">🛒 Panier <span id="cart-count">(0)</span></button>
+</nav>
+
+<div class="catalogue-header">
+  <h1>Catalogue <em>complet</em></h1>
+  <p id="subtitle">133 références sélectionnées · 13 producteurs italiens</p>
+</div>
+
+<div id="filters">
+  <label>Producteur</label>
+  <select id="filter-producer" onchange="renderGrid()"><option value="">Tous</option></select>
+  <label>Type</label>
+  <select id="filter-type" onchange="renderGrid()"><option value="">Tous</option></select>
+  <input type="text" id="filter-search" placeholder="Rechercher nom ou type..." oninput="renderGrid()">
+  <span id="result-count"></span>
+</div>
+
+<div id="wine-grid"></div>
+<div id="no-results">Aucun vin trouvé pour cette sélection.</div>
+
+<div id="cart-overlay" onclick="closeCart()"></div>
+<div id="cart-panel">
+  <div id="cart-header">
+    <h2>Mon Panier</h2>
+    <button id="cart-close" onclick="closeCart()">✕</button>
+  </div>
+  <div id="cart-items"></div>
+  <div id="cart-footer">
+    <div id="cart-total">Total : <strong>0 FCFA</strong></div>
+    <input type="text" id="order-name" placeholder="Votre nom (optionnel)">
+    <input type="text" id="order-phone" placeholder="Votre téléphone (optionnel)">
+    <button id="send-wa" onclick="sendWhatsApp()">📲 Commander via WhatsApp</button>
+  </div>
+</div>
+
+<div id="lightbox" onclick="closeLightbox()">
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+const WINES = [{"ean":"8007860750269","nome":"VILLA GIRARDI - Valpolicella Classico Doc","fornitore":"Villa Girardi","tipologia":"Valpolicella","prezzoDettaglio":9500,"immagine":"8007860750269.jpg"},{"ean":"8007860750115","nome":"VILLA GIRARDI - Soave Classico Doc 75cl","fornitore":"Villa Girardi","tipologia":"Soave","prezzoDettaglio":9800,"immagine":"8007860750115.jpg"},{"ean":"8000037050742","nome":"VALDOCA - TRIO Prosecco Extra Dry lt.0,20*3","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry","prezzoDettaglio":12480,"immagine":"8000037050742.jpg"},{"ean":"8000037000662","nome":"VALDOCA - Rive di Santo Stefano - Valdobbiadene Prosecco Sup.DOCG Extra Brut","fornitore":"Valdoca","tipologia":"Prosecco Extra Brut","prezzoDettaglio":13700,"immagine":"8000037000662.jpg"},{"ean":"8000037000396","nome":"VALDOCA - Rive di San Pietro - Valdobbiadene Prosecco Superiore DOCG Brut","fornitore":"Valdoca","tipologia":"Prosecco Brut","prezzoDettaglio":13700,"immagine":"8000037000396.jpg"},{"ean":"8000037000242","nome":"VALDOCA - Rive di Colbertaldo - Valdobbiadene Prosecco Superiore DOCG Extra Dry","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry","prezzoDettaglio":13700,"immagine":"8000037000242.jpg"},{"ean":"8000037000129","nome":"VALDOCA - Prosecco Millesimato Rosè Brut DOC di Treviso","fornitore":"Valdoca","tipologia":"Prosecco Brut Rosè","prezzoDettaglio":11550,"immagine":"8000037000129.jpg"},{"ean":"8000037001614","nome":"VALDOCA - Prosecco DOC Treviso lt. 1,5 Extra Dry Magnum","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry","prezzoDettaglio":24500,"immagine":"8000037001614.jpg"},{"ean":"8000037001478","nome":"VALDOCA - Prosecco DOC Treviso Frizzante Screw Cap","fornitore":"Valdoca","tipologia":"Frizzante","prezzoDettaglio":8300,"immagine":"8000037001478.jpg"},{"ean":"8000037001416","nome":"VALDOCA - Prosecco DOC Treviso Extra Dry","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry","prezzoDettaglio":9500,"immagine":"8000037001416.jpg"},{"ean":"8000037001423","nome":"VALDOCA - Prosecco DOC Treviso Brut","fornitore":"Valdoca","tipologia":"Prosecco Brut","prezzoDettaglio":9700,"immagine":"8000037001423.jpg"},{"ean":"8000037002246","nome":"VALDOCA - Millesimato Rosé - Prosecco DOC Treviso Extra Dry Rosè","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry Rosè","prezzoDettaglio":9500,"immagine":"8000037002246.jpg"},{"ean":"8000037000693","nome":"VALDOCA - Millesimato Extra Dry - Valdobbiadene Prosecco Superiore DOCG","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry","prezzoDettaglio":12800,"immagine":"8000037000693.jpg"},{"ean":"8000037000037","nome":"VALDOCA - Millesimato Extra Brut - Valdobbiadene Prosecco Superiore DOCG","fornitore":"Valdoca","tipologia":"Prosecco Extra Brut","prezzoDettaglio":12800,"immagine":"8000037000037.jpg"},{"ean":"8000037010883","nome":"VALDOCA - Millesimato Brut - Valdobbiadene Prosecco Superiore DOCG","fornitore":"Valdoca","tipologia":"Prosecco Brut","prezzoDettaglio":12500,"immagine":"8000037010883.jpg"},{"ean":"8000037000402","nome":"VALDOCA - Millesimato Blu - Prosecco DOC Extra Dry","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry","prezzoDettaglio":12500,"immagine":"8000037000402.jpg"},{"ean":"8000037000983","nome":"VALDOCA - Blu  Magnum - Prosecco DOC Extra Dry lt. 1,5","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry","prezzoDettaglio":24500,"immagine":"8000037000983.jpg"},{"ean":"8000037001874","nome":"VALDOCA - ASO Asolo Prosecco Superiore DOCG Extra Dry - V -","fornitore":"Valdoca","tipologia":"Prosecco Extra Dry","prezzoDettaglio":9950,"immagine":"8000037001874.jpg"},{"ean":"8013327000907","nome":"UC - MOMA Sangiovese Cab.Sauvignon Rubicone Igt 75cl","fornitore":"Umberto Cesari","tipologia":"Sangiovese","prezzoDettaglio":9900,"immagine":"8013327000907.jpg"},{"ean":"8013327000112","nome":"UC - Liano Sangiovese Cab.Sauvignon Rubicone Igt 75cl","fornitore":"Umberto Cesari","tipologia":"Sangiovese","prezzoDettaglio":21700,"immagine":"8013327000112.jpg"},{"ean":"8013327000839","nome":"UC - Laurento Sangiovese di Romagna Doc Ris. 75cl","fornitore":"Umberto Cesari","tipologia":"Sangiovese","prezzoDettaglio":15500,"immagine":"8013327000839.jpg"},{"ean":"8013327000358","nome":"UC - Cà Grande, Sangiovese di Romagna Doc Sup.","fornitore":"Umberto Cesari","tipologia":"Sangiovese","prezzoDettaglio":9900,"immagine":"8013327000358.jpg"},{"ean":"8001906998608","nome":"TOSER - Ripe in Rosa Prosecco Rosè Extra-Brut Milles.","fornitore":"TOSER Vini","tipologia":"Prosecco Extra Brut","prezzoDettaglio":11500,"immagine":"8001906998608.jpg"},{"ean":"8001906998868","nome":"TOSER - Ripe Frondose Prosecco Sparkling Extra Dry Milles.","fornitore":"TOSER Vini","tipologia":"Prosecco Extra Dry","prezzoDettaglio":13130,"immagine":"8001906998868.jpg"},{"ean":"8001906997229","nome":"TOSER - Prosecco DOC ROSE' BRUT Millesimato","fornitore":"TOSER Vini","tipologia":"Prosecco Rosè Brut","prezzoDettaglio":9980,"immagine":"8001906997229.jpg"},{"ean":"8001906999285","nome":"TOSER - Pinot GRIGIO - Villa Cornaro","fornitore":"TOSER Vini","tipologia":"Pinot","prezzoDettaglio":8500,"immagine":"8001906999285.jpg"},{"ean":"8001906997861","nome":"TOSER - Pinot Bianco - Villa Cornaro","fornitore":"TOSER Vini","tipologia":"Pinot","prezzoDettaglio":8200,"immagine":"8001906997861.jpg"},{"ean":"8001906987855","nome":"TOSER - Montepulciano - Villa Cornaro","fornitore":"TOSER Vini","tipologia":"Montepulciano","prezzoDettaglio":8500,"immagine":"8001906987855.jpg"},{"ean":"8001906999261","nome":"TOSER - Merlot Rosato - Villa Cornaro","fornitore":"TOSER Vini","tipologia":"Merlot Rosato","prezzoDettaglio":7900,"immagine":"8001906999261.jpg"},{"ean":"8001906998813","nome":"TOSER - Lèvigo Pinot Grigio","fornitore":"TOSER Vini","tipologia":"Pinot","prezzoDettaglio":9400,"immagine":"8001906998813.jpg"},{"ean":"8001906998790","nome":"TOSER - Impetum Cabernet Sauvignon","fornitore":"TOSER Vini","tipologia":"Cabernet Sauvignon","prezzoDettaglio":9400,"immagine":"8001906998790.jpg"},{"ean":"8001906998837","nome":"TOSER - Focaia Sauvignon","fornitore":"TOSER Vini","tipologia":"Sauvignon Blanc","prezzoDettaglio":9300,"immagine":"8001906998837.jpg"},{"ean":"8001906998752","nome":"TOSER - Flumen Prosecco spumante brut","fornitore":"TOSER Vini","tipologia":"Prosecco Brut","prezzoDettaglio":10500,"immagine":"8001906998752.jpg"},{"ean":"8001906998783","nome":"TOSER - Enigma Merlot","fornitore":"TOSER Vini","tipologia":"Merlot","prezzoDettaglio":9400,"immagine":"8001906998783.jpg"},{"ean":"8001906997878","nome":"TOSER - Chardonnay - Villa Cornaro","fornitore":"TOSER Vini","tipologia":"Chardonnay","prezzoDettaglio":8500,"immagine":"8001906997878.jpg"},{"ean":"8001906997755","nome":"TOSER - Blanc de Blancs - Extra Dry","fornitore":"TOSER Vini","tipologia":"Blanc de Blancs","prezzoDettaglio":8200,"immagine":"8001906997755.jpg"},{"ean":"8001906007256","nome":"TOSER - Bardolino - Villa Cornaro","fornitore":"TOSER Vini","tipologia":"Bardolino","prezzoDettaglio":7900,"immagine":"8001906007256.jpg"},{"ean":"8001906998820","nome":"TOSER - Arzarè Chardonnay","fornitore":"TOSER Vini","tipologia":"Chardonnay","prezzoDettaglio":9300,"immagine":"8001906998820.jpg"},{"ean":"RIUL","nome":"Prosecco DOC - Vigna RIUL Extra Dry","fornitore":"RIUL","tipologia":"Prosecco Extra Dry","prezzoDettaglio":12500,"immagine":"riul.jpg"},{"ean":"8023354390919","nome":"NOTTE ROSSA VERMENTINO SALENTO I.G.P.","fornitore":"NotteRossa","tipologia":"Vermentino","prezzoDettaglio":9500,"immagine":"8023354390919.jpg"},{"ean":"8023354080117","nome":"NOTTE ROSSA VERDECA PUGLIA I.G.P.","fornitore":"NotteRossa","tipologia":"Verdeca Puglia","prezzoDettaglio":9500,"immagine":"8023354080117.jpg"},{"ean":"8023354037012","nome":"NOTTE ROSSA TRE PUMI ROSSO SALENTO IGP","fornitore":"NotteRossa","tipologia":"Rosso Salento","prezzoDettaglio":10450,"immagine":"8023354037012.jpg"},{"ean":"8023354024418","nome":"NOTTE ROSSA TRAMARI ROSE' DI PRIMITIVO SALENTO IGP","fornitore":"NotteRossa","tipologia":"Primitivo Rosè","prezzoDettaglio":9300,"immagine":"8023354024418.jpg"},{"ean":"8023354395815","nome":"NOTTE ROSSA TIMO VERMENTINO SALENTO IGP","fornitore":"NotteRossa","tipologia":"Vermentino Salento","prezzoDettaglio":10500,"immagine":"8023354395815.jpg"},{"ean":"8023354071917","nome":"NOTTE ROSSA TALO' PRIMITIVO-MERLOT","fornitore":"NotteRossa","tipologia":"Primitivo-Merlot","prezzoDettaglio":9500,"immagine":"8023354071917.jpg"},{"ean":"8023354171914","nome":"NOTTE ROSSA TALO' FIANO SALENTO IGP","fornitore":"NotteRossa","tipologia":"Fiano Salento","prezzoDettaglio":9500,"immagine":"8023354171914.jpg"},{"ean":"8023354050912","nome":"NOTTE ROSSA SALICE SALENTINO D.O.P.","fornitore":"NotteRossa","tipologia":"Salice Salento","prezzoDettaglio":11250,"immagine":"8023354050912.jpg"},{"ean":"8023354030112","nome":"NOTTE ROSSA ROSSO SALENTO I.G.P.","fornitore":"NotteRossa","tipologia":"Rosso Salento","prezzoDettaglio":8750,"immagine":"8023354030112.jpg"},{"ean":"8023354320916","nome":"NOTTE ROSSA PRIMITIVO ROSATO SALENTO I.G.P.","fornitore":"NotteRossa","tipologia":"Primitivo Rosato Salento","prezzoDettaglio":9500,"immagine":"8023354320916.jpg"},{"ean":"8023354410914","nome":"NOTTE ROSSA NERO DI TROIA PUGLIA I.G.P.","fornitore":"NotteRossa","tipologia":"Nero di Troia Puglia","prezzoDettaglio":12200,"immagine":"8023354410914.jpg"},{"ean":"8023354100112","nome":"NOTTE ROSSA MALVASIA NERA SALENTO I.G.P.","fornitore":"NotteRossa","tipologia":"Malvasia Nero Salento","prezzoDettaglio":9500,"immagine":"8023354100112.jpg"},{"ean":"8023354042610","nome":"NOTTE ROSSA F NEGROAMARO SALENTO IGP","fornitore":"NotteRossa","tipologia":"Negroamaro Salento","prezzoDettaglio":21010,"immagine":"8023354042610.jpg"},{"ean":"8023354060119","nome":"NOTTE ROSSA CL.75 PRIMITIVO SALENTO IGP","fornitore":"NotteRossa","tipologia":"Primitivo Salento","prezzoDettaglio":9950,"immagine":"8023354060119.jpg"},{"ean":"8023354040111","nome":"NOTTE ROSSA CL.75 NEGROAMARO SALENTO IGP","fornitore":"NotteRossa","tipologia":"Negroamaro Salento","prezzoDettaglio":9350,"immagine":"8023354040111.jpg"},{"ean":"8023354170917","nome":"NOTTE ROSSA CL.75 FIANO SALENTO IGP","fornitore":"NotteRossa","tipologia":"Fiano Salento","prezzoDettaglio":9500,"immagine":"8023354170917.jpg"},{"ean":"8023354020113","nome":"NOTTE ROSSA CL 75 NEGROAMARO ROSATO IGP","fornitore":"NotteRossa","tipologia":"Negroamaro Rosato","prezzoDettaglio":7880,"immagine":"8023354020113.jpg"},{"ean":"8002365057004","nome":"MICHELE CHIARLO - Palàs Barolo Docg 75cl","fornitore":"Michele Chiarlo","tipologia":"Barolo","prezzoDettaglio":25900,"immagine":"8002365057806.jpg"},{"ean":"8002365055307","nome":"MICHELE CHIARLO - Palàs Barbera d'Asti","fornitore":"Michele Chiarlo","tipologia":"Barbera","prezzoDettaglio":8500,"immagine":"8002365055307.jpg"},{"ean":"8002365058100","nome":"MICHELE CHIARLO - Palàs Barbaresco Docg 75cl","fornitore":"Michele Chiarlo","tipologia":"Barbaresco","prezzoDettaglio":23300,"immagine":"8002365058100.jpg"},{"ean":"8004375000315","nome":"GAROFOLI - Piancarda ROSSO CONERO","fornitore":"Garofoli","tipologia":"Rosso Conero","prezzoDettaglio":9900,"immagine":"8004375000315.jpg"},{"ean":"8008900004472","nome":"CIELO - VG Rosso Venezia Giulia Igt 10.000 btls 13,5% vol","fornitore":"CIELO & Terra","tipologia":"Rosso Venezia Giulia","prezzoDettaglio":15300,"immagine":"8008900004472.jpg"},{"ean":"8008900004458","nome":"CIELO - VG Bianco Venezia Giulia Igt 15.000 btls 13% vol","fornitore":"CIELO & Terra","tipologia":"Bianco Venezia Giulia","prezzoDettaglio":13250,"immagine":"8008900004458.jpg"},{"ean":"8008900008845","nome":"CIELO - Trebbiano - Pinot grigio Puglia IGT Screw cap 12,0% vol.","fornitore":"CIELO & Terra","tipologia":"Trebbiano","prezzoDettaglio":7300,"immagine":"8008900008845.jpg"},{"ean":"8008900005899","nome":"CIELO - Sauvignon Veneto Igt Screw cap 12,0% vol.","fornitore":"CIELO & Terra","tipologia":"Sauvignon Blanc","prezzoDettaglio":7300,"immagine":"8008900005899.jpg"},{"ean":"8008900009361","nome":"CIELO - Sangiovese - Primitivo Puglia IGT Screw cap 12,5% vol.","fornitore":"CIELO & Terra","tipologia":"Sangiovese-Primitivo","prezzoDettaglio":7300,"immagine":"8008900009361.jpg"},{"ean":"8008900007565","nome":"CIELO - Prosecco Doc Spumante Doc Brut Pop cork 11,0% vol.","fornitore":"CIELO & Terra","tipologia":"Prosecco Brut","prezzoDettaglio":10500,"immagine":"8008900007565.jpg"},{"ean":"8008900007701","nome":"CIELO - Prosecco 200 ml Doc Frizzante Screw cap 10,5% vol.","fornitore":"CIELO & Terra","tipologia":"Frizzante","prezzoDettaglio":3900,"immagine":"8008900007701.jpg"},{"ean":"8008900001020","nome":"CIELO - Primitivo Puglia Igt Natural cork 13,5% vol.","fornitore":"CIELO & Terra","tipologia":"Primitivo Puglia","prezzoDettaglio":8900,"immagine":"8008900001020.jpg"},{"ean":"8008900003987","nome":"CIELO - PRIMITIVO BIOLOGICO Puglia igt Premium Conique 0,135","fornitore":"CIELO & Terra","tipologia":"Primitivo Puglia","prezzoDettaglio":12000,"immagine":"8008900003987.jpg"},{"ean":"8008900002188","nome":"CIELO - Pinot Grigio Delle Venezie Doc Screw cap 12,0% vol.","fornitore":"CIELO & Terra","tipologia":"Pinot","prezzoDettaglio":7300,"immagine":"8008900002188.jpg"},{"ean":"8008900009163","nome":"CIELO - PINOT GRIGIO BIOLOGICO Delle Venezie doc Premium Conique 0,12","fornitore":"CIELO & Terra","tipologia":"Pinot","prezzoDettaglio":9950,"immagine":"8008900009163.jpg"},{"ean":"8008900005561","nome":"CIELO - Pinot Grigio 187 ml Delle Venezie Doc Screw cap 12,0% vol.","fornitore":"CIELO & Terra","tipologia":"Pinot","prezzoDettaglio":3500,"immagine":"8008900005561.jpg"},{"ean":"8008900006186","nome":"CIELO - Pinot Noir Trevenezie Igt Screw cap 12,5% vol.","fornitore":"CIELO & Terra","tipologia":"Pinot","prezzoDettaglio":7300,"immagine":"8008900006186.jpg"},{"ean":"8008900004137","nome":"CIELO - Nero di Gio Vino d'Italia Super Italian blend 14,5% vol.","fornitore":"CIELO & Terra","tipologia":"Nero di GIO","prezzoDettaglio":15450,"immagine":"8008900003758.jpg"},{"ean":"8008900003772","nome":"CIELO - MILLESIMATO Prosecco DOC Brut Spumante Pop Cork 0,115","fornitore":"CIELO & Terra","tipologia":"Prosecco Brut","prezzoDettaglio":12350,"immagine":"8008900003772.jpg"},{"ean":"8008900004212","nome":"CIELO - Merlot Veneto Igt Natural cork 12,5% vol.","fornitore":"CIELO & Terra","tipologia":"Merlot","prezzoDettaglio":7300,"immagine":"8008900004212.jpg"},{"ean":"8008900000092","nome":"CIELO - Merlot - Raboso Veneto Igt Screw cap 11,5% vol.","fornitore":"CIELO & Terra","tipologia":"Merlot","prezzoDettaglio":7300,"immagine":"8008900000092.jpg"},{"ean":"8008900005554","nome":"CIELO - Merlot 187 ml Veneto Igt Screw cap 12,50% vol.","fornitore":"CIELO & Terra","tipologia":"Merlot","prezzoDettaglio":3500,"immagine":"8008900005554.jpg"},{"ean":"8008900004410","nome":"CIELO - LOVE EDITION CUVEE Extra dry Spumante Pop Cork 0,105","fornitore":"CIELO & Terra","tipologia":"Frizzante","prezzoDettaglio":10200,"immagine":"8008900004410.jpg"},{"ean":"8008900009613","nome":"CIELO - GRAN PASSAIA ROSSO Toscana IGT Grand tuscan blend 13,5% vol.","fornitore":"CIELO & Terra","tipologia":"Appassimento","prezzoDettaglio":13000,"immagine":"8008900009613.jpg"},{"ean":"8008900009934","nome":"CIELO - GRAN BERCANTO RISERVA 0,75","fornitore":"CIELO & Terra","tipologia":"Bercanto","prezzoDettaglio":18750,"immagine":"8008900009934.jpg"},{"ean":"8008900000085","nome":"CIELO - Garganega - Chardonnay Veneto Igt Screw cap 11,5% vol.","fornitore":"CIELO & Terra","tipologia":"Chardonnay","prezzoDettaglio":7300,"immagine":"8008900000085.jpg"},{"ean":"8008900008432","nome":"CIELO - DECONTI ROSSO Puglia IGT Appassimento Lieve 14,5% vol","fornitore":"CIELO & Terra","tipologia":"Appassimento","prezzoDettaglio":14500,"immagine":"8008900008432.jpg"},{"ean":"8008900008333","nome":"CIELO - Cuvée Privée Spumante Extra Dry Pop cork 10,5% vol.","fornitore":"CIELO & Terra","tipologia":"Frizzante","prezzoDettaglio":8500,"immagine":"8008900008333.jpg"},{"ean":"8008900001075","nome":"CIELO - Chardonnay Veneto Igt Natural cork 12,0% vol.","fornitore":"CIELO & Terra","tipologia":"Chardonnay","prezzoDettaglio":7300,"immagine":"8008900001075.jpg"},{"ean":"8008900001037","nome":"CIELO - Cabernet Sauvignon Veneto Igt Natural cork 12,5% vol.","fornitore":"CIELO & Terra","tipologia":"Cabernet Sauvignon","prezzoDettaglio":7300,"immagine":"8008900001037.jpg"},{"ean":"8008900004625","nome":"CIELO - Bianco di Gio Vino d'Italia Super Italian blend 12,5% vol.","fornitore":"CIELO & Terra","tipologia":"Bianco di GIO","prezzoDettaglio":15500,"immagine":"8008900004625.jpg"},{"ean":"8008900009774","nome":"CIELO - BERCANTO P.NOIR PINOT NOIR 0,75","fornitore":"CIELO & Terra","tipologia":"Pinot","prezzoDettaglio":13900,"immagine":"bericanto.jpg"},{"ean":"8008900006827","nome":"CIELO - BACCOLO ROSSO Veneto IGT Appassimento lieve 13,5%vol.","fornitore":"CIELO & Terra","tipologia":"Appassimento","prezzoDettaglio":12500,"immagine":"8008900006827.jpg"},{"ean":"8008900007374","nome":"CIELO - BACCOLO BIANCO Puglia IGT Appassimento lieve 13% vol","fornitore":"CIELO & Terra","tipologia":"Appassimento","prezzoDettaglio":12500,"immagine":"8008900007374.jpg"},{"ean":"8003015714315","nome":"CARPINETO - Brunello di Montalcino Docg 75cl","fornitore":"Carpineto","tipologia":"Brunello","prezzoDettaglio":33000,"immagine":"8003015714315.jpg"},{"ean":"8032638932691","nome":"BM - Pinot Nero IGT Trevenezie 0,75","fornitore":"Borgomolino","tipologia":"Pinot","prezzoDettaglio":9700,"immagine":"bmrdw065.jpg"},{"ean":"8032638932622","nome":"BM - Pinot Grigio DOC delle Venezie 0,75","fornitore":"Borgomolino","tipologia":"Pinot","prezzoDettaglio":8950,"immagine":"8032638932622.jpg"},{"ean":"8032638932714","nome":"BM - Merlot DOC Venezia 0,75","fornitore":"Borgomolino","tipologia":"Merlot","prezzoDettaglio":8500,"immagine":"8032638932714.jpg"},{"ean":"8017799903766","nome":"Bartolomeo - Villa San Biagio Rosso Igt Veneto","fornitore":"BEATO Bartolomeo","tipologia":"Rosso Veneto","prezzoDettaglio":9300,"immagine":"8017799903766.jpg"},{"ean":"8017799102985","nome":"Bartolomeo - Vespaiolo Frizzante Igt Veneto - Frizzanti","fornitore":"BEATO Bartolomeo","tipologia":"Frizzante","prezzoDettaglio":10500,"immagine":"8017799102985.jpg"},{"ean":"8017799102855","nome":"Bartolomeo - Vespaiolo Breganze Doc - Lt Lt 0,75","fornitore":"BEATO Bartolomeo","tipologia":"Vespaiolo","prezzoDettaglio":9950,"immagine":"8017799102855.jpg"},{"ean":"8017799001349","nome":"Bartolomeo - ROSSO IGT VENETO LITRI 1.50 / 2023","fornitore":"BEATO Bartolomeo","tipologia":"Rosso Veneto","prezzoDettaglio":11500,"immagine":"8017799100103.jpg"},{"ean":"8017799117460","nome":"Bartolomeo - Prosecco Spumante Doc Extra Dry - Lt 0,75","fornitore":"BEATO Bartolomeo","tipologia":"Prosecco Extra Dry","prezzoDettaglio":10500,"immagine":"8017799117460.jpg"},{"ean":"8017799113103","nome":"Bartolomeo - Pinot Nero Superiore Doc - Savardo","fornitore":"BEATO Bartolomeo","tipologia":"Pinot","prezzoDettaglio":14900,"immagine":"8017799113103.jpg"},{"ean":"8017799112878","nome":"Bartolomeo - Pinot Nero Doc - Lt 0,75 - Le Colline di San Giorgio","fornitore":"BEATO Bartolomeo","tipologia":"Pinot","prezzoDettaglio":9500,"immagine":"8017799112878.jpg"},{"ean":"8017799102879","nome":"Bartolomeo - Pinot Grigio Doc - Le Colline di San Giorgio","fornitore":"BEATO Bartolomeo","tipologia":"Pinot","prezzoDettaglio":9500,"immagine":"8017799102879.jpg"},{"ean":"8017799104804","nome":"Bartolomeo - PINOT BIANCO VENETO IGT L.1,5 / 2024","fornitore":"BEATO Bartolomeo","tipologia":"Pinot","prezzoDettaglio":11500,"immagine":"8017799100103.jpg"},{"ean":"8017799102862","nome":"Bartolomeo - Pinot Bianco Colline S.Giorgio DOC","fornitore":"BEATO Bartolomeo","tipologia":"Pinot","prezzoDettaglio":8400,"immagine":"8017799102862.jpg"},{"ean":"8017799000175","nome":"Bartolomeo - Naturae Vespaiolo Breganze DOC","fornitore":"BEATO Bartolomeo","tipologia":"Vespaiolo","prezzoDettaglio":9950,"immagine":"8017799000175.jpg"},{"ean":"8017799000236","nome":"Bartolomeo - Naturae Pinot Nero Veneto IGT","fornitore":"BEATO Bartolomeo","tipologia":"Pinot","prezzoDettaglio":8200,"immagine":"8017799000236.jpg"},{"ean":"8017799905807","nome":"Bartolomeo - Naturae Pinot Grigio delle Venezie DOC","fornitore":"BEATO Bartolomeo","tipologia":"Pinot","prezzoDettaglio":9200,"immagine":"8017799905807.jpg"},{"ean":"8017799117507","nome":"Bartolomeo - Naturae Marzemino Frizzante Igt Veneto","fornitore":"BEATO Bartolomeo","tipologia":"Marzemino","prezzoDettaglio":9950,"immagine":"8017799117507.jpg"},{"ean":"8017799000298","nome":"Bartolomeo - Naturae Chardonnay Veneto IGT","fornitore":"BEATO Bartolomeo","tipologia":"Chardonnay","prezzoDettaglio":9950,"immagine":"8017799000298.jpg"},{"ean":"8017799113301","nome":"Bartolomeo - Merlot Superiore Breganze Doc - Lt 0,75 - Savardo","fornitore":"BEATO Bartolomeo","tipologia":"Merlot","prezzoDettaglio":10800,"immagine":"8017799113301.jpg"},{"ean":"8017799113417","nome":"Bartolomeo - Merlot Superiore Breganze Doc - Bosco Grande","fornitore":"BEATO Bartolomeo","tipologia":"Merlot","prezzoDettaglio":18100,"immagine":"8017799113417.jpg"},{"ean":"8017799110102","nome":"Bartolomeo - Merlot Igt Veneto - 1 liter","fornitore":"BEATO Bartolomeo","tipologia":"Merlot","prezzoDettaglio":8900,"immagine":"8017799110102.jpg"},{"ean":"8017799112953","nome":"Bartolomeo - Merlot Breganze Doc - Lt 0,75 - Le Colline di San Giorgio","fornitore":"BEATO Bartolomeo","tipologia":"Merlot","prezzoDettaglio":8300,"immagine":"8017799112953.jpg"},{"ean":"8017799113400","nome":"Bartolomeo - Kilò Cabernet Breganze DOC Riserva","fornitore":"BEATO Bartolomeo","tipologia":"Cabernet","prezzoDettaglio":21500,"immagine":"8017799113400.jpg"},{"ean":"8017799905388","nome":"Bartolomeo - Glera Frizzante Igt Veneto","fornitore":"BEATO Bartolomeo","tipologia":"Frizzante","prezzoDettaglio":9950,"immagine":"8017799905388.jpg"},{"ean":"8017799113431","nome":"Bartolomeo - Diadè Pinot Nero Breganze DOC Riserva","fornitore":"BEATO Bartolomeo","tipologia":"Pinot","prezzoDettaglio":28000,"immagine":"8017799113431.jpg"},{"ean":"8017799113004","nome":"Bartolomeo - Cabernet Sup.Breganze Doc - Lt 0,75 - Savardo","fornitore":"BEATO Bartolomeo","tipologia":"Cabernet","prezzoDettaglio":10800,"immagine":"8017799113004.jpg"},{"ean":"8017799112854","nome":"Bartolomeo - Cabernet Sauvignon - Le Colline di San Giorgio","fornitore":"BEATO Bartolomeo","tipologia":"Cabernet Sauvignon","prezzoDettaglio":8300,"immagine":"8017799112854.jpg"},{"ean":"8017799110454","nome":"Bartolomeo - Cabernet Igt Veneto - 1 liter","fornitore":"BEATO Bartolomeo","tipologia":"Cabernet Sauvignon","prezzoDettaglio":8900,"immagine":"8017799110454.jpg"},{"ean":"8017799904701","nome":"Bartolomeo - Brandano Rosso Igt Veneto","fornitore":"BEATO Bartolomeo","tipologia":"Rosso Veneto","prezzoDettaglio":8900,"immagine":"8017799904701.jpg"},{"ean":"8017799100103","nome":"Bartolomeo - Bianco Igt Veneto - 1 liter","fornitore":"BEATO Bartolomeo","tipologia":"Bianco Veneto","prezzoDettaglio":8900,"immagine":"8017799100103.jpg"},{"ean":"8003905043679","nome":"ASTORIA - Valpolicella Ripasso DOC 13,5°","fornitore":"Astoria","tipologia":"Valpolicella Ripasso","prezzoDettaglio":19900,"immagine":"8003905043679.jpg"},{"ean":"8003905042351","nome":"ASTORIA - Valdobbiadene Prosecco Superiore DOCG Extra Dry Corderie","fornitore":"Astoria","tipologia":"Prosecco Extra Dry","prezzoDettaglio":14750,"immagine":"8003905042351.jpg"},{"ean":"8003905102543","nome":"ASTORIA - Sauvignon Blanc Veneto IGT Suade 12,5°","fornitore":"Astoria","tipologia":"Sauvignon Blanc","prezzoDettaglio":8700,"immagine":"8003905102543.jpg"},{"ean":"8003905045789","nome":"ASTORIA - Ribolla Gialla Brut Butterfly 11°","fornitore":"Astoria","tipologia":"Ribolla Gialla","prezzoDettaglio":8700,"immagine":"8003905045789.jpg"},{"ean":"8003905042283","nome":"ASTORIA - Prosecco DOC Treviso Extra Dry Galie 11° - 750Ml","fornitore":"Astoria","tipologia":"Prosecco Extra Dry","prezzoDettaglio":11900,"immagine":"8003905042283.jpg"},{"ean":"8003905041781","nome":"ASTORIA - Prosecco DOC Extra Dry Butterfly 11°","fornitore":"Astoria","tipologia":"Prosecco Extra Dry","prezzoDettaglio":9500,"immagine":"8003905041781.jpg"},{"ean":"8003905046243","nome":"ASTORIA - Pinot Grigio DOC delle Venezie Alisia 12,5° 0,375","fornitore":"Astoria","tipologia":"Pinot","prezzoDettaglio":4420,"immagine":"8003905046243.jpg"},{"ean":"8003905100969","nome":"ASTORIA - Pinot Grigio DOC delle Venezie Alisia 12,5°","fornitore":"Astoria","tipologia":"Pinot","prezzoDettaglio":8700,"immagine":"8003905100969.jpg"},{"ean":"8003905044713","nome":"ASTORIA - Gewurztraminer Trentino DOC","fornitore":"Astoria","tipologia":"Gewurztraminer","prezzoDettaglio":13900,"immagine":"8003905044713.jpg"},{"ean":"8003905046045","nome":"ASTORIA - Cuvèe Millesimato Brut Beltà 11°","fornitore":"Astoria","tipologia":"Frizzante","prezzoDettaglio":8900,"immagine":"8003905046045.jpg"},{"ean":"8003905096651","nome":"ASTORIA - Casa Vittorino Valdobbiadene Prosecco Sup. Docg brut Millesimato","fornitore":"Astoria","tipologia":"Prosecco Brut","prezzoDettaglio":14500,"immagine":"8003905096651.jpg"},{"ean":"8003905042832","nome":"ASTORIA - Asolo Prosecco Superiore DOCG - Extra Brut Fano 11°","fornitore":"Astoria","tipologia":"Prosecco Extra Brut","prezzoDettaglio":14750,"immagine":"8003905042832.jpg"}];
+let cart = {};
+
+const producers = [...new Set(WINES.map(w => w.fornitore))].sort();
+const types = [...new Set(WINES.map(w => w.tipologia))].sort();
+const selP = document.getElementById('filter-producer');
+const selT = document.getElementById('filter-type');
+producers.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; selP.appendChild(o); });
+types.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; selT.appendChild(o); });
+
+// Apply filter: URL param + sessionStorage, after options are populated
+(function() {
+  const urlParams = new URLSearchParams(location.search);
+  const urlType = urlParams.get('type'); // URLSearchParams auto-decodes + as space
+  const savedType = sessionStorage.getItem('igv_filter_type');
+  const want = urlType || savedType || '';
+  if (want) {
+    const opts = [...selT.options].map(o => o.value);
+    const exact = opts.find(v => v === want);
+    const partial = opts.find(v => v.toLowerCase().startsWith(want.toLowerCase()));
+    selT.value = exact || partial || '';
+  }
+  if (savedType) sessionStorage.removeItem('igv_filter_type');
+})();
+
+function fmt(n) { return n.toLocaleString('fr-FR') + ' FCFA'; }
+
+function renderGrid() {
+  const fp = selP.value, ft = selT.value;
+  const fs = document.getElementById('filter-search').value.toLowerCase();
+  const filtered = WINES.filter(w =>
+    (!fp || w.fornitore === fp) &&
+    (!ft || w.tipologia === ft) &&
+    (!fs || w.nome.toLowerCase().includes(fs) || w.tipologia.toLowerCase().includes(fs))
+  );
+  const grid = document.getElementById('wine-grid');
+  const noRes = document.getElementById('no-results');
+  document.getElementById('result-count').textContent = filtered.length + ' résultat' + (filtered.length !== 1 ? 's' : '');
+  if (filtered.length === 0) { grid.innerHTML = ''; noRes.style.display = 'block'; return; }
+  noRes.style.display = 'none';
+  grid.innerHTML = filtered.map(w => {
+    const shortName = w.nome.replace(/^[A-Z &]+ - /, '');
+    const imgHtml = w.immagine
+      ? `<img src="images/${w.immagine}" alt="${w.nome}" loading="lazy" onclick="openLightbox('images/${w.immagine}')" onerror="this.parentElement.innerHTML='<div class=wine-img-placeholder>🍷</div>'">`
+      : `<div class="wine-img-placeholder">🍷</div>`;
+    return `<div class="wine-card">
+      ${imgHtml}
+      <div class="card-body">
+        <div class="card-producer">${w.fornitore}</div>
+        <div class="card-name">${shortName}</div>
+        <div class="card-type">${w.tipologia}</div>
+        <div class="card-price">${fmt(w.prezzoDettaglio)}</div>
+        <button class="add-btn" onclick="addToCart('${w.ean}')">+ Ajouter au panier</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addToCart(ean) { cart[ean] = (cart[ean] || 0) + 1; updateCartCount(); }
+function updateCartCount() {
+  document.getElementById('cart-count').textContent = '(' + Object.values(cart).reduce((a,b)=>a+b,0) + ')';
+}
+function openCart() {
+  document.getElementById('cart-overlay').style.display = 'block';
+  document.getElementById('cart-panel').classList.add('open');
+  renderCart();
+}
+function closeCart() {
+  document.getElementById('cart-overlay').style.display = 'none';
+  document.getElementById('cart-panel').classList.remove('open');
+}
+function renderCart() {
+  const keys = Object.keys(cart).filter(k => cart[k] > 0);
+  const container = document.getElementById('cart-items');
+  if (keys.length === 0) {
+    container.innerHTML = '<p style="color:#555;text-align:center;padding:40px">Votre panier est vide</p>';
+    document.getElementById('cart-total').innerHTML = 'Total : <strong>0 FCFA</strong>';
+    return;
+  }
+  let total = 0;
+  container.innerHTML = keys.map(ean => {
+    const w = WINES.find(x => x.ean === ean);
+    const sub = w.prezzoDettaglio * cart[ean];
+    total += sub;
+    const shortName = w.nome.replace(/^[A-Z &]+ - /, '');
+    return `<div class="cart-item">
+      <div class="cart-item-name">${shortName}</div>
+      <div class="qty-controls">
+        <button class="qty-btn" onclick="changeQty('${ean}',-1)">−</button>
+        <span style="color:#fff;min-width:20px;text-align:center">${cart[ean]}</span>
+        <button class="qty-btn" onclick="changeQty('${ean}',1)">+</button>
+      </div>
+      <div class="cart-item-price">${fmt(sub)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('cart-total').innerHTML = `Total : <strong>${fmt(total)}</strong>`;
+}
+function changeQty(ean, delta) {
+  cart[ean] = (cart[ean] || 0) + delta;
+  if (cart[ean] <= 0) delete cart[ean];
+  updateCartCount(); renderCart();
+}
+function sendWhatsApp() {
+  const keys = Object.keys(cart).filter(k => cart[k] > 0);
+  if (keys.length === 0) { alert('Votre panier est vide.'); return; }
+  const name = document.getElementById('order-name').value.trim();
+  const phone = document.getElementById('order-phone').value.trim();
+  let total = 0;
+  const lines = keys.map(ean => {
+    const w = WINES.find(x => x.ean === ean);
+    total += w.prezzoDettaglio * cart[ean];
+    return `• ${cart[ean]}x ${w.nome.replace(/^[A-Z &]+ - /,'')} — ${fmt(w.prezzoDettaglio * cart[ean])}`;
+  }).join('\n');
+  let msg = `🍷 *Commande Italian's Got Vin*\n`;
+  if (name) msg += `👤 ${name}\n`;
+  if (phone) msg += `📞 ${phone}\n`;
+  msg += `\n${lines}\n\n💰 *Total : ${fmt(total)}*\n\n_Sapori d'Italia — Dakar_`;
+  window.open(`https://wa.me/221762566776?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+renderGrid();
+</script>
+</body>
+</html>
